@@ -67,6 +67,23 @@ class Bitmap:
                     new_bitmap.support += 1
         return new_bitmap
 
+    def create_new_bitmap_i_step(self, bitmap: 'Bitmap', sequences_size, last_bit_index):
+        new_bitmap = Bitmap(last_bit_index)
+        set_bits = self.bitmap.search(1)
+        # if both bits are TRUE
+        for bit_idx in set_bits:
+            if bitmap.bitmap[bit_idx]:
+                new_bitmap.bitmap[bit_idx] = True
+
+                sid: int = self.bit_to_sid(bit_idx, sequences_size)
+                if sid != new_bitmap.last_sid:
+                    new_bitmap.support += 1
+                new_bitmap.last_sid = sid
+        #  logical AND
+        new_bitmap.bitmap = new_bitmap.bitmap & bitmap.bitmap
+
+        return new_bitmap
+
     def bit_to_sid(self, bit, sequences_size):
         # Bisect starts from index 1
         index = bisect(sequences_size, bit) - 1

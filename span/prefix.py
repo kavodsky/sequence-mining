@@ -18,3 +18,6 @@ class Prefix:
         prefix = Prefix()
         prefix.itemsets = itemsets
         return prefix
+
+    def __len__(self):
+        return len(self.itemsets)

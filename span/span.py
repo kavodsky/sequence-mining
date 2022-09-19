@@ -80,11 +80,14 @@ class SpamAlgo:
             prefix = Prefix([k])
             self.dfs_pruning(prefix=prefix,
                              prefix_bitmap=self.vertical_db[k],
-                             search_items=list(self.vertical_db.keys()),
+                             search_s_items=list(self.vertical_db.keys()),
+                             search_i_items=list(self.vertical_db.keys()),
+                             has_to_be_greater_than_for_i_step=k,
                              m=2)
 
-    def dfs_pruning(self, prefix, prefix_bitmap, search_items, m):
-        s_temp, s_temp_bitmaps = self.perform_s_step(prefix, prefix_bitmap, search_items)
+    def dfs_pruning(self, prefix: Prefix, prefix_bitmap: Bitmap, search_s_items: List[int],
+                    search_i_items: List[int], has_to_be_greater_than_for_i_step: int, m: int):
+        s_temp, s_temp_bitmaps = self.perform_s_step(prefix, prefix_bitmap, search_s_items)
         for idx, item in enumerate(s_temp):
             prefix_s_step = prefix.clone_sequence()
             prefix_s_step.add_item_set([item])
@@ -92,25 +95,47 @@ class SpamAlgo:
             # FIX: maximum_patter_length
             self.frequent_items.append(prefix_s_step.itemsets)
             if self.maximum_patter_length > m:
-                self.dfs_pruning(prefix_s_step, new_bitmap, s_temp, m+1)
-        self.perform_i_step()
+                self.dfs_pruning(prefix_s_step, new_bitmap, s_temp, s_temp, item, m + 1)
 
-    def perform_s_step(self, prefix, prefix_bitmap, search_items):
+        i_temp, i_temp_bitmaps = self.perform_i_step(prefix,
+                                                     prefix_bitmap,
+                                                     search_i_items,
+                                                     has_to_be_greater_than_for_i_step)
+        for idx, item in enumerate(i_temp):
+            # create the new prefix
+            prefix_i_step = prefix.clone_sequence()
+            prefix_i_step.itemsets[len(prefix_i_step) - 1].append(item)
+            # create new Bitmap
+            new_bitmap = i_temp_bitmaps[idx]
+            if self.maximum_patter_length > m:
+                self.dfs_pruning(prefix_i_step, new_bitmap, s_temp, i_temp, item, m + 1)
+
+    def perform_s_step(self, prefix, prefix_bitmap, frequent_items):
         s_temp: List[int] = []
         s_temp_bitmaps: List[Bitmap] = []
-        for i, k in enumerate(search_items):
-            # print(f'serching combination {prefix.itemsets} + {k}')
+        for i, k in enumerate(frequent_items):
+            # print(f'searching combination {prefix.itemsets} + {k}')
             new_bitmap = prefix_bitmap.create_new_bitmap_s_step(bitmap=self.vertical_db[k],
-                                                         sequences_size=self.sequences_size,
-                                                         last_bit_index=self.last_bit_index)
+                                                                sequences_size=self.sequences_size,
+                                                                last_bit_index=self.last_bit_index)
             # print(f'new bitmap support {new_bitmap.support}')
             if new_bitmap.support >= self.min_sup:
                 s_temp.append(k)
                 s_temp_bitmaps.append(new_bitmap)
         return s_temp, s_temp_bitmaps
 
-    def perform_i_step(self):
-        pass
+    def perform_i_step(self, prefix, prefix_bitmap, frequent_items: List[int], has_to_be_greater_than_for_i_step: int):
+        i_temp: List[int] = []
+        i_temp_bitmaps: List[Bitmap] = []
+        for item in frequent_items:
+            if item > has_to_be_greater_than_for_i_step:
+                new_bitmap = prefix_bitmap.create_new_bitmap_i_step(self.vertical_db[item],
+                                                                    self.sequences_size,
+                                                                    self.last_bit_index)
+                if new_bitmap.support >= self.min_sup:
+                    i_temp.append(item)
+                    i_temp_bitmaps.append(new_bitmap)
+        return i_temp, i_temp_bitmaps
 
 
 def generate_sequence():
@@ -138,11 +163,12 @@ if __name__ == '__main__':
     #      }
     d = {
         'a': [[0, 2, 10, 13, 14, 15, 18, 20], [2, 7, 12, 15, 17, 19], [6, 12, 19], [0, 3, 4, 6, 15], [1, 3, 10, 13, 15],
-      [8, 10], [4, 8, 9, 10]],
-        'b': [[9, 10, 17], [4], [0, 1, 2, 3, 4, 5, 12, 13, 19], [0, 1, 5, 10, 17, 18], [4, 7, 12], [2, 8, 9, 13, 15, 16, 19],
-      [3, 5, 6, 9, 11, 13, 18, 19], [2, 5, 9, 10, 13, 16, 20], [2, 3, 6]],
+              [8, 10], [4, 8, 9, 10]],
+        'b': [[9, 10, 17], [4], [0, 1, 2, 3, 4, 5, 12, 13, 19], [0, 1, 5, 10, 17, 18], [4, 7, 12],
+              [2, 8, 9, 13, 15, 16, 19],
+              [3, 5, 6, 9, 11, 13, 18, 19], [2, 5, 9, 10, 13, 16, 20], [2, 3, 6]],
         'c': [[0, 9, 10, 13, 14, 19, 20], [0, 1, 9, 15, 17], [1, 7, 11, 12, 15, 20], [7, 9, 10, 11, 14, 18], [0, 10],
-      [5, 13, 15], [1, 5, 9, 15], [1, 5, 7, 8, 19], [2, 6, 11, 14, 16], [3, 10, 11, 12]],
+              [5, 13, 15], [1, 5, 9, 15], [1, 5, 7, 8, 19], [2, 6, 11, 14, 16], [3, 10, 11, 12]],
         'd': [[15], [6, 9, 10, 12, 13, 15, 16], [13, 16]]
     }
 
