@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sequence-mining"
+version = "0.0.2"
+authors = [
+  { name="Andras Gyacsok", email="atti.dyachok@gmail.com" },
+]
+description = "Sequence mining SPAM algorithm implementation"
+keywords = ["sequence-mining", "SPAM"]
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    'bitarray==2.6.0',
+    'bitmap==0.0.7',
+    'future==0.18.2'
+]
+
+[project.urls]
+"Homepage" = "https://github.com/adyachok/sequence-mining"
+"Bug Tracker" = "https://github.com/adyachok/sequence-mining/issues"
