@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sequence-mining"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Andras Gyacsok", email="atti.dyachok@gmail.com" },
 ]

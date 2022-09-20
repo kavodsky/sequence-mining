@@ -8,13 +8,14 @@ from sequence_mining.bitmap import Bitmap
 """
 Vocabulary:
 CID - customer id
+SID - sequence id
 TID - transaction id
 
 Expected input:
-{ cid: list of itemsets sorted by tid}
+{ list of itemsets sorted by tid}
 items in itemsets are supposed to be sorted
 
-Dict[int,  List[List[int]] e.g. [[1], [2,4,9], [1,2], [2,3]]]
+List[List[int]] e.g. [[1], [2,4,9], [1,2], [2,3]]]
 
 """
 from typing import List, Dict
@@ -31,9 +32,8 @@ class SpamAlgo:
         self.maximum_patter_length = sys.maxsize
         self.frequent_items = []
 
-    def spam(self, input_dict: Dict[int, List[List[int]]]):
+    def spam(self, sequences: List[List[List[int]]]):
         # Go through all sequences and calculate sequences sizes
-        sequences = list(input_dict.values())
         self.last_bit_index, self.sequences_size = self.calculate_sequences_sizes(sequences)
         self.build_vertical_db(sequences)
         self.min_sup = self.calculate_min_support()
@@ -95,7 +95,7 @@ class SpamAlgo:
             # FIX: maximum_patter_length
             self.frequent_items.append(prefix_s_step.itemsets)
             if self.maximum_patter_length > m:
-                self.dfs_pruning(prefix_s_step, new_bitmap, s_temp, s_temp, item, m+1)
+                self.dfs_pruning(prefix_s_step, new_bitmap, s_temp, s_temp, item, m + 1)
 
         i_temp, i_temp_bitmaps = self.perform_i_step(prefix,
                                                      prefix_bitmap,
@@ -104,11 +104,11 @@ class SpamAlgo:
         for idx, item in enumerate(i_temp):
             # create the new prefix
             prefix_i_step = prefix.clone_sequence()
-            prefix_i_step.itemsets[len(prefix_i_step)-1].append(item)
+            prefix_i_step.itemsets[len(prefix_i_step) - 1].append(item)
             # create new Bitmap
             new_bitmap = i_temp_bitmaps[idx]
             if self.maximum_patter_length > m:
-                self.dfs_pruning(prefix_i_step, new_bitmap, s_temp, i_temp, item, m+1)
+                self.dfs_pruning(prefix_i_step, new_bitmap, s_temp, i_temp, item, m + 1)
 
     def perform_s_step(self, prefix, prefix_bitmap, frequent_items):
         s_temp: List[int] = []
@@ -116,8 +116,8 @@ class SpamAlgo:
         for i, k in enumerate(frequent_items):
             # print(f'searching combination {prefix.itemsets} + {k}')
             new_bitmap = prefix_bitmap.create_new_bitmap_s_step(bitmap=self.vertical_db[k],
-                                                         sequences_size=self.sequences_size,
-                                                         last_bit_index=self.last_bit_index)
+                                                                sequences_size=self.sequences_size,
+                                                                last_bit_index=self.last_bit_index)
             # print(f'new bitmap support {new_bitmap.support}')
             if new_bitmap.support >= self.min_sup:
                 s_temp.append(k)
@@ -137,6 +137,7 @@ class SpamAlgo:
                     i_temp_bitmaps.append(new_bitmap)
         return i_temp, i_temp_bitmaps
 
+
 def generate_sequence():
     itemsets_in_sequence = randint(3, 10)
     sequence = [[] for _ in range(itemsets_in_sequence)]
@@ -155,21 +156,16 @@ def generate_sequence():
 if __name__ == '__main__':
     # sequence = generate_sequence()
     # SpamAlgo().create_bitmap(sequence)
-    # d = {'a': generate_sequence(),
-    #      'b': generate_sequence(),
-    #      'c': generate_sequence(),
-    #      'd': generate_sequence()
-    #      }
-    d = {
-        'a': [[0, 2, 10, 13, 14, 15, 18, 20], [2, 7, 12, 15, 17, 19], [6, 12, 19], [0, 3, 4, 6, 15], [1, 3, 10, 13, 15],
-      [8, 10], [4, 8, 9, 10]],
-        'b': [[9, 10, 17], [4], [0, 1, 2, 3, 4, 5, 12, 13, 19], [0, 1, 5, 10, 17, 18], [4, 7, 12], [2, 8, 9, 13, 15, 16, 19],
-      [3, 5, 6, 9, 11, 13, 18, 19], [2, 5, 9, 10, 13, 16, 20], [2, 3, 6]],
-        'c': [[0, 9, 10, 13, 14, 19, 20], [0, 1, 9, 15, 17], [1, 7, 11, 12, 15, 20], [7, 9, 10, 11, 14, 18], [0, 10],
-      [5, 13, 15], [1, 5, 9, 15], [1, 5, 7, 8, 19], [2, 6, 11, 14, 16], [3, 10, 11, 12]],
-        'd': [[15], [6, 9, 10, 12, 13, 15, 16], [13, 16]]
-    }
-
-    s = SpamAlgo(0.7)
-    s.spam(d)
-    print(s.frequent_items)
+    # l = [generate_sequence() for _ in range(4)]
+    sequences = [
+        [[0, 2, 10, 13, 14, 15, 18, 20], [2, 7, 12, 15, 17, 19], [6, 12, 19], [0, 3, 4, 6, 15], [1, 3, 10, 13, 15],
+         [8, 10], [4, 8, 9, 10]],
+        [[9, 10, 17], [4], [0, 1, 2, 3, 4, 5, 12, 13, 19], [0, 1, 5, 10, 17, 18], [4, 7, 12], [2, 8, 9, 13, 15, 16, 19],
+         [3, 5, 6, 9, 11, 13, 18, 19], [2, 5, 9, 10, 13, 16, 20], [2, 3, 6]],
+        [[0, 9, 10, 13, 14, 19, 20], [0, 1, 9, 15, 17], [1, 7, 11, 12, 15, 20], [7, 9, 10, 11, 14, 18], [0, 10],
+         [5, 13, 15], [1, 5, 9, 15], [1, 5, 7, 8, 19], [2, 6, 11, 14, 16], [3, 10, 11, 12]],
+        [[15], [6, 9, 10, 12, 13, 15, 16], [13, 16]]
+    ]
+    algo = SpamAlgo(0.7)
+    algo.spam(sequences)
+    print(algo.frequent_items)
